@@ -8,6 +8,7 @@ class TimeTracker:
         self.root.title("Time Tracker")
         self.root.geometry("450x350") # Slightly larger window
         self.root.resizable(False, False) # Keep it non-resizable for simplicity
+        self.root.attributes('-topmost', True) # Keep window on top
         
         # Time tracking variables (now mostly managed by logic, but GUI needs access)
         self.time_var = tk.StringVar(value="00:00:00")
