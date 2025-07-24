@@ -9,6 +9,12 @@ class TimeTracker:
         self.root.geometry("400x300")
         self.root.resizable(False, False)
         
+        # Time tracking variables (now mostly managed by logic, but GUI needs access)
+        self.time_var = tk.StringVar(value="00:00:00")
+        self.task_name_var = tk.StringVar()
+        self.project_name_var = tk.StringVar()
+        self.status_var = tk.StringVar(value="Ready to track time")
+
         # Initialize the core logic
         self.logic = TimeTrackerLogic()
         self.logic.set_callbacks(
@@ -17,12 +23,6 @@ class TimeTracker:
             show_warning_cb=messagebox.showwarning,
             show_error_cb=messagebox.showerror
         )
-        
-        # Time tracking variables (now mostly managed by logic, but GUI needs access)
-        self.time_var = tk.StringVar(value="00:00:00")
-        self.task_name_var = tk.StringVar()
-        self.project_name_var = tk.StringVar()
-        self.status_var = tk.StringVar(value="Ready to track time")
         
         self.setup_ui()
         
