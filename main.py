@@ -6,8 +6,8 @@ class TimeTracker:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Time Tracker")
-        self.root.geometry("400x300")
-        self.root.resizable(False, False)
+        self.root.geometry("450x350") # Slightly larger window
+        self.root.resizable(False, False) # Keep it non-resizable for simplicity
         
         # Time tracking variables (now mostly managed by logic, but GUI needs access)
         self.time_var = tk.StringVar(value="00:00:00")
@@ -29,15 +29,17 @@ class TimeTracker:
     def setup_ui(self):
         # Main frame
         main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=10, pady=10) # Add padding to main frame
+        self.root.grid_columnconfigure(0, weight=1) # Allow main frame to expand horizontally
+        self.root.grid_rowconfigure(0, weight=1) # Allow main frame to expand vertically
         
         # Task name input
         ttk.Label(main_frame, text="Task Name:").grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
-        ttk.Entry(main_frame, textvariable=self.task_name_var, width=30).grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        ttk.Entry(main_frame, textvariable=self.task_name_var, width=40).grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10)) # Wider entry
         
         # Project name input
         ttk.Label(main_frame, text="Project Name:").grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
-        self.project_combobox = ttk.Combobox(main_frame, textvariable=self.project_name_var, width=28)
+        self.project_combobox = ttk.Combobox(main_frame, textvariable=self.project_name_var, width=38) # Wider combobox
         self.project_combobox.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         self.project_combobox["values"] = self.logic.get_unique_projects()
         self.project_combobox.set("") # Set initial value to empty
@@ -45,24 +47,24 @@ class TimeTracker:
         # Time display
         time_frame = ttk.Frame(main_frame)
         time_frame.grid(row=4, column=0, columnspan=2, pady=(0, 10))
-        ttk.Label(time_frame, text="Time:").pack(side=tk.LEFT)
-        ttk.Label(time_frame, textvariable=self.time_var, font=("Helvetica", 16)).pack(side=tk.LEFT, padx=(5, 0))
+        ttk.Label(time_frame, text="Time:").pack(side=tk.LEFT, pady=(10, 0)) # Add vertical padding
+        ttk.Label(time_frame, textvariable=self.time_var, font=("Helvetica", 24, "bold")).pack(side=tk.LEFT, padx=(10, 0), pady=(10, 0)) # Larger, bold font
         
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=5, column=0, columnspan=2)
+        button_frame.grid(row=5, column=0, columnspan=2, pady=(10, 20)) # More vertical padding for buttons
         
         self.start_btn = ttk.Button(button_frame, text="Start", command=self.start_timer_gui)
-        self.start_btn.pack(side=tk.LEFT, padx=(0, 5))
+        self.start_btn.pack(side=tk.LEFT, padx=(0, 10), ipadx=10, ipady=5) # Add internal padding
         
         self.pause_btn = ttk.Button(button_frame, text="Pause", command=self.pause_timer_gui, state=tk.DISABLED)
-        self.pause_btn.pack(side=tk.LEFT, padx=(0, 5))
+        self.pause_btn.pack(side=tk.LEFT, padx=(0, 10), ipadx=10, ipady=5) # Add internal padding
         
         self.stop_btn = ttk.Button(button_frame, text="Stop", command=self.stop_timer_gui, state=tk.DISABLED)
-        self.stop_btn.pack(side=tk.LEFT)
+        self.stop_btn.pack(side=tk.LEFT, ipadx=10, ipady=5) # Add internal padding
         
         # Status label
-        ttk.Label(main_frame, textvariable=self.status_var, foreground="gray").grid(row=6, column=0, columnspan=2, pady=(10, 0))
+        ttk.Label(main_frame, textvariable=self.status_var, foreground="gray", font=("Helvetica", 10, "italic")).grid(row=6, column=0, columnspan=2, pady=(10, 0)) # Italic status
         
     def start_timer_gui(self):
         task_name = self.task_name_var.get()
