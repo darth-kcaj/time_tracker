@@ -1,10 +1,15 @@
 import PyInstaller.__main__
 import os
+from datetime import datetime # Import datetime for timestamp
+
+# Generate a timestamp
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+app_name = f"TimeTracker_{timestamp}"
 
 # Configuration for PyInstaller
 pyinstaller_args = [
     'main.py',
-    '--name=TimeTracker',
+    f'--name={app_name}', # Use the timestamped name
     '--windowed',  # No console window (since we have a GUI)
     '--onefile',   # Create a single executable file
     '--clean',     # Clean PyInstaller cache before building
