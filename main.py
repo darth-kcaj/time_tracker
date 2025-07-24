@@ -33,26 +33,30 @@ class TimeTracker:
         self.root.grid_columnconfigure(0, weight=1) # Allow main frame to expand horizontally
         self.root.grid_rowconfigure(0, weight=1) # Allow main frame to expand vertically
         
+        # Configure main_frame columns for centering
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
+        
         # Task name input
-        ttk.Label(main_frame, text="Task Name:").grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
-        ttk.Entry(main_frame, textvariable=self.task_name_var, width=40).grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10)) # Wider entry
+        ttk.Label(main_frame, text="Task Name:").grid(row=0, column=0, sticky=tk.EW, pady=(0, 5))
+        ttk.Entry(main_frame, textvariable=self.task_name_var, width=40).grid(row=1, column=0, columnspan=2, sticky=(tk.EW), pady=(0, 10)) # Wider entry, sticky EW
         
         # Project name input
-        ttk.Label(main_frame, text="Project Name:").grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
+        ttk.Label(main_frame, text="Project Name:").grid(row=2, column=0, sticky=tk.EW, pady=(0, 5))
         self.project_combobox = ttk.Combobox(main_frame, textvariable=self.project_name_var, width=38) # Wider combobox
-        self.project_combobox.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.project_combobox.grid(row=3, column=0, columnspan=2, sticky=(tk.EW), pady=(0, 10)) # Sticky EW
         self.project_combobox["values"] = self.logic.get_unique_projects()
         self.project_combobox.set("") # Set initial value to empty
         
         # Time display
         time_frame = ttk.Frame(main_frame)
-        time_frame.grid(row=4, column=0, columnspan=2, pady=(0, 10))
+        time_frame.grid(row=4, column=0, columnspan=2, sticky=tk.EW, pady=(0, 10)) # Sticky EW
         ttk.Label(time_frame, text="Time:").pack(side=tk.LEFT, pady=(10, 0)) # Add vertical padding
         ttk.Label(time_frame, textvariable=self.time_var, font=("Helvetica", 24, "bold")).pack(side=tk.LEFT, padx=(10, 0), pady=(10, 0)) # Larger, bold font
         
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=5, column=0, columnspan=2, pady=(10, 20)) # More vertical padding for buttons
+        button_frame.grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=(10, 20)) # More vertical padding for buttons, sticky EW
         
         self.start_btn = ttk.Button(button_frame, text="Start", command=self.start_timer_gui)
         self.start_btn.pack(side=tk.LEFT, padx=(0, 10), ipadx=10, ipady=5) # Add internal padding
@@ -64,7 +68,7 @@ class TimeTracker:
         self.stop_btn.pack(side=tk.LEFT, ipadx=10, ipady=5) # Add internal padding
         
         # Status label
-        ttk.Label(main_frame, textvariable=self.status_var, foreground="gray", font=("Helvetica", 10, "italic")).grid(row=6, column=0, columnspan=2, pady=(10, 0)) # Italic status
+        ttk.Label(main_frame, textvariable=self.status_var, foreground="gray", font=("Helvetica", 10, "italic")).grid(row=6, column=0, columnspan=2, sticky=tk.EW, pady=(10, 0)) # Italic status, sticky EW
         
     def start_timer_gui(self):
         task_name = self.task_name_var.get()
