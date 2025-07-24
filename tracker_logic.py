@@ -144,8 +144,7 @@ class TimeTrackerLogic:
             "break_seconds": break_seconds, # New: break time
             "start_time": start_ts.isoformat(), # New: start timestamp
             "end_time": end_ts.isoformat(),     # New: end timestamp
-            "date": datetime.now().strftime("%Y-%m-%d"),
-            "timestamp": datetime.now().isoformat() # This is the save timestamp, not session start
+            "date": datetime.now().strftime("%Y-%m-%d")
         }
         
         self.data.append(entry)
