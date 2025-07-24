@@ -10,6 +10,8 @@ class TimeTrackerLogic:
         self.is_paused = False
         self.start_time = None
         self.elapsed_time = timedelta()
+        self.total_paused_time = timedelta() # New: to track total time spent paused
+        self.session_start_timestamp = None # New: to store the actual start of the session
         self.timer_thread = None
         self.data_file = os.path.join(os.path.expanduser("~"), "time_tracker_data.json")
         self.data = []
@@ -37,6 +39,8 @@ class TimeTrackerLogic:
             self.is_running = True
             self.is_paused = False
             self.start_time = datetime.now()
+            self.session_start_timestamp = datetime.now() # Capture the actual start of the session
+            self.total_paused_time = timedelta() # Reset total paused time for a new session
             
             status_text = f"Tracking: {task_name}"
             if project_name:
@@ -48,6 +52,7 @@ class TimeTrackerLogic:
             self.timer_thread.start()
         elif self.is_paused:
             self.is_paused = False
+            # When resuming, subtract the elapsed time from now to get the effective start time for this segment
             self.start_time = datetime.now() - self.elapsed_time
             if self.update_status_callback:
                 self.update_status_callback("Resumed tracking")
@@ -55,23 +60,48 @@ class TimeTrackerLogic:
     def pause_timer(self):
         if self.is_running and not self.is_paused:
             self.is_paused = True
-            self.elapsed_time = datetime.now() - self.start_time
+            pause_start_time = datetime.now() # Capture when pause started
+            self.elapsed_time = pause_start_time - self.start_time # Time tracked before pause
+            
+            # Start a new thread to track pause duration
+            def track_pause():
+                while self.is_paused:
+                    time.sleep(0.1)
+                # When unpaused, add the duration of this specific pause to total_paused_time
+                self.total_paused_time += (datetime.now() - pause_start_time)
+            
+            threading.Thread(target=track_pause, daemon=True).start()
+
             if self.update_status_callback:
                 self.update_status_callback("Timer paused")
     
     def stop_timer(self, task_name, project_name):
         if self.is_running:
+            end_timestamp = datetime.now() # Capture the end time
+            
             if self.is_paused:
-                final_time = self.elapsed_time
+                final_tracked_duration = self.elapsed_time
             else:
-                final_time = datetime.now() - self.start_time
-                
-            self.save_time_entry(task_name, project_name, final_time)
+                final_tracked_duration = end_timestamp - self.start_time
+            
+            # Calculate total session duration (including tracked time and paused time)
+            total_session_duration = end_timestamp - self.session_start_timestamp
+            
+            self.save_time_entry(
+                task_name,
+                project_name,
+                final_tracked_duration,
+                self.session_start_timestamp,
+                end_timestamp,
+                self.total_paused_time
+            )
             
             self.is_running = False
             self.is_paused = False
             self.elapsed_time = timedelta()
             self.start_time = None
+            self.session_start_timestamp = None # Reset session start
+            self.total_paused_time = timedelta() # Reset total paused time
             
             if self.update_time_callback:
                 self.update_time_callback("00:00:00")
@@ -100,18 +130,22 @@ class TimeTrackerLogic:
             print(f"Error loading data: {e}")
             self.data = []
     
-    def save_time_entry(self, task_name, project_name, duration):
+    def save_time_entry(self, task_name, project_name, duration, start_ts, end_ts, break_duration):
         task_name = task_name.strip()
         project_name = project_name.strip()
         
         duration_seconds = int(duration.total_seconds())
+        break_seconds = int(break_duration.total_seconds())
         
         entry = {
             "task": task_name,
             "project": project_name,
             "duration_seconds": duration_seconds,
+            "break_seconds": break_seconds, # New: break time
+            "start_time": start_ts.isoformat(), # New: start timestamp
+            "end_time": end_ts.isoformat(),     # New: end timestamp
             "date": datetime.now().strftime("%Y-%m-%d"),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat() # This is the save timestamp, not session start
         }
         
         self.data.append(entry)
