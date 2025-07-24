@@ -122,3 +122,11 @@ class TimeTrackerLogic:
         except Exception as e:
             if self.show_error_callback:
                 self.show_error_callback("Error", f"Could not save data: {e}")
+
+    def get_unique_projects(self):
+        """Returns a sorted list of unique project names from the loaded data."""
+        projects = set()
+        for entry in self.data:
+            if "project" in entry and entry["project"].strip():
+                projects.add(entry["project"].strip())
+        return sorted(list(projects))

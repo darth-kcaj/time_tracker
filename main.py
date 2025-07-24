@@ -37,7 +37,10 @@ class TimeTracker:
         
         # Project name input
         ttk.Label(main_frame, text="Project Name:").grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
-        ttk.Entry(main_frame, textvariable=self.project_name_var, width=30).grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.project_combobox = ttk.Combobox(main_frame, textvariable=self.project_name_var, width=28)
+        self.project_combobox.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+        self.project_combobox["values"] = self.logic.get_unique_projects()
+        self.project_combobox.set("") # Set initial value to empty
         
         # Time display
         time_frame = ttk.Frame(main_frame)
