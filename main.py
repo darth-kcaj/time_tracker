@@ -6,7 +6,7 @@ class TimeTracker:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Time Tracker")
-        self.root.geometry("450x350") # Slightly larger window
+        self.root.geometry("350x350") # More compact window
         self.root.resizable(False, False) # Keep it non-resizable for simplicity
         self.root.attributes('-topmost', True) # Keep window on top
         
@@ -30,7 +30,7 @@ class TimeTracker:
     def setup_ui(self):
         # Main frame
         main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=10, pady=10) # Add padding to main frame
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=10) # Reduced horizontal padding
         self.root.grid_columnconfigure(0, weight=1) # Allow main frame to expand horizontally
         self.root.grid_rowconfigure(0, weight=1) # Allow main frame to expand vertically
         
@@ -40,11 +40,11 @@ class TimeTracker:
         
         # Task name input
         ttk.Label(main_frame, text="Task Name:").grid(row=0, column=0, sticky=tk.EW, pady=(0, 5))
-        ttk.Entry(main_frame, textvariable=self.task_name_var, width=40).grid(row=1, column=0, columnspan=2, sticky=(tk.EW), pady=(0, 10)) # Wider entry, sticky EW
+        ttk.Entry(main_frame, textvariable=self.task_name_var, width=30).grid(row=1, column=0, columnspan=2, sticky=(tk.EW), pady=(0, 10)) # More compact entry, sticky EW
         
         # Project name input
         ttk.Label(main_frame, text="Project Name:").grid(row=2, column=0, sticky=tk.EW, pady=(0, 5))
-        self.project_combobox = ttk.Combobox(main_frame, textvariable=self.project_name_var, width=38) # Wider combobox
+        self.project_combobox = ttk.Combobox(main_frame, textvariable=self.project_name_var, width=28) # More compact combobox, sticky EW
         self.project_combobox.grid(row=3, column=0, columnspan=2, sticky=(tk.EW), pady=(0, 10)) # Sticky EW
         self.project_combobox["values"] = self.logic.get_unique_projects()
         self.project_combobox.set("") # Set initial value to empty
