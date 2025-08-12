@@ -177,13 +177,13 @@ class TimeTrackerLogic:
         task_name = task_name.strip()
         project_name = project_name.strip()
 
-        duration_seconds = int(duration.total_seconds())
+        work_seconds = int(duration.total_seconds())
         break_seconds = int(break_duration.total_seconds())
 
         entry = {
             "task": task_name,
             "project": project_name,
-            "duration_seconds": duration_seconds,
+            "work_seconds": work_seconds,
             "break_seconds": break_seconds,  # New: break time
             "start_time": start_ts.isoformat(),  # New: start timestamp
             "end_time": end_ts.isoformat(),  # New: end timestamp
