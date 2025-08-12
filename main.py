@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
+from datetime import datetime
 import json
 import os
 from tracker_logic import TimeTrackerLogic  # Import the new logic module
@@ -9,7 +10,7 @@ class TimeTracker:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Time Tracker")
-        self.root.geometry("370x380")  # Slightly larger to fit settings
+        self.root.geometry("370x460")  # Larger to fit earnings meter
         self.root.resizable(False, False)  # Keep it non-resizable for simplicity
         self.root.attributes("-topmost", True)  # Keep window on top
 
@@ -18,6 +19,8 @@ class TimeTracker:
         self.task_name_var = tk.StringVar()
         self.project_name_var = tk.StringVar()
         self.status_var = tk.StringVar(value="Ready to track time")
+        self.hourly_rate_var = tk.DoubleVar(value=0.0)
+        self.earnings_var = tk.StringVar(value="$0.0000")
 
         # Initialize the core logic
         self.logic = TimeTrackerLogic()
@@ -37,6 +40,8 @@ class TimeTracker:
         self._load_user_settings()
 
         self.setup_ui()
+        # Start earnings/meter animation loop
+        self._schedule_earnings_update()
 
     def setup_ui(self):
         # Main frame
@@ -80,9 +85,26 @@ class TimeTracker:
             time_frame, textvariable=self.time_var, font=("Helvetica", 24, "bold")
         ).pack(side=tk.LEFT, padx=(10, 0), pady=(10, 0))
 
+        # Earnings meter label
+        earnings_frame = ttk.Frame(main_frame)
+        earnings_frame.grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=(0, 6))
+        ttk.Label(earnings_frame, text="Earnings:").pack(side=tk.LEFT)
+        ttk.Label(
+            earnings_frame,
+            textvariable=self.earnings_var,
+            font=("Helvetica", 18, "bold"),
+            foreground="#2a9d8f",
+        ).pack(side=tk.LEFT, padx=(10, 0))
+
+        # Smooth progress meter (fills over each minute)
+        meter_frame = ttk.Frame(main_frame)
+        meter_frame.grid(row=6, column=0, columnspan=2, sticky=tk.EW, pady=(0, 12))
+        self.meter = ttk.Progressbar(meter_frame, mode="determinate", maximum=100)
+        self.meter.pack(fill=tk.X, expand=True)
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=(10, 20))
+        button_frame.grid(row=7, column=0, columnspan=2, sticky=tk.EW, pady=(10, 20))
 
         self.start_btn = ttk.Button(
             button_frame, text="Start", command=self.start_timer_gui
@@ -105,13 +127,13 @@ class TimeTracker:
             textvariable=self.status_var,
             foreground="gray",
             font=("Helvetica", 10, "italic"),
-        ).grid(row=6, column=0, columnspan=2, sticky=tk.EW, pady=(10, 0))
+        ).grid(row=8, column=0, columnspan=2, sticky=tk.EW, pady=(10, 0))
 
         # Settings button on the right (below status)
         self.settings_btn = ttk.Button(
             main_frame, text="Settings", command=self.open_settings_dialog
         )
-        self.settings_btn.grid(row=7, column=1, sticky=tk.E, pady=(5, 0))
+        self.settings_btn.grid(row=9, column=1, sticky=tk.E, pady=(5, 0))
 
     def start_timer_gui(self):
         task_name = self.task_name_var.get()
@@ -148,9 +170,46 @@ class TimeTracker:
             self.start_btn.config(state=tk.NORMAL, text="Start")
             self.pause_btn.config(state=tk.DISABLED)
             self.stop_btn.config(state=tk.DISABLED)
+            self.earnings_var.set("$0.0000")
             # Optionally clear fields
             # self.task_name_var.set("")
             # self.project_name_var.set("")
+
+    def _schedule_earnings_update(self):
+        """High-frequency UI update for earnings and meter (smooth increments)."""
+        try:
+            rate = float(self.hourly_rate_var.get() or 0.0)
+        except Exception:
+            rate = 0.0
+
+        # Compute elapsed seconds precisely from logic state
+        elapsed_seconds = 0.0
+        if self.logic.is_running:
+            if self.logic.is_paused:
+                elapsed_seconds = self.logic.elapsed_time.total_seconds()
+            else:
+                elapsed_seconds = (
+                    self.logic.elapsed_time.total_seconds()
+                    + (datetime.now() - self.logic.start_time).total_seconds()
+                )
+        else:
+            # Not running; logic may have reset elapsed_time
+            elapsed_seconds = (
+                self.logic.elapsed_time.total_seconds()
+                if getattr(self.logic, "elapsed_time", None)
+                else 0.0
+            )
+
+        earned = (elapsed_seconds / 3600.0) * rate
+        # Show 4 decimals and a dollar sign
+        self.earnings_var.set(f"${earned:.4f}")
+
+        # Meter: fill 0-100 over each minute for a lively animation
+        minute_fraction = (elapsed_seconds % 60.0) / 60.0
+        self.meter["value"] = minute_fraction * 100.0
+
+        # Re-run ~20 times per second for smoothness
+        self.root.after(50, self._schedule_earnings_update)
 
     # -------------------- Settings handling --------------------
     def _load_user_settings(self):
@@ -161,13 +220,22 @@ class TimeTracker:
                 data_file = settings.get("data_file")
                 if data_file:
                     self.logic.set_data_file(data_file)
+                rate = settings.get("hourly_rate")
+                if rate is not None:
+                    try:
+                        self.hourly_rate_var.set(float(rate))
+                    except Exception:
+                        pass
         except Exception as e:
             # Show non-blocking error, but proceed with defaults
             print(f"Failed to load settings: {e}")
 
     def _save_user_settings(self):
         try:
-            settings = {"data_file": getattr(self.logic, "data_file", None)}
+            settings = {
+                "data_file": getattr(self.logic, "data_file", None),
+                "hourly_rate": float(self.hourly_rate_var.get() or 0.0),
+            }
             with open(self.settings_path, "w") as f:
                 json.dump(settings, f, indent=2)
         except Exception as e:
@@ -216,9 +284,17 @@ class TimeTracker:
         browse_btn = ttk.Button(frm, text="Browse…", command=browse)
         browse_btn.grid(row=1, column=2, padx=(5, 0))
 
+        # Hourly rate
+        ttk.Label(frm, text="Hourly rate ($/hr):").grid(
+            row=2, column=0, sticky=tk.W, pady=(10, 5)
+        )
+        rate_var = tk.StringVar(value=str(self.hourly_rate_var.get() or 0.0))
+        rate_entry = ttk.Entry(frm, textvariable=rate_var, width=20)
+        rate_entry.grid(row=3, column=0, sticky=tk.W)
+
         # Buttons
         btns = ttk.Frame(frm)
-        btns.grid(row=2, column=0, columnspan=3, sticky=tk.E, pady=(10, 0))
+        btns.grid(row=4, column=0, columnspan=3, sticky=tk.E, pady=(10, 0))
 
         def on_ok():
             chosen = path_var.get().strip()
@@ -226,6 +302,17 @@ class TimeTracker:
                 messagebox.showwarning("Warning", "Please enter a valid path")
                 return
             self.logic.set_data_file(chosen)
+            # Validate and save hourly rate
+            try:
+                rate_val = float(rate_var.get().strip() or 0.0)
+                if rate_val < 0:
+                    raise ValueError
+                self.hourly_rate_var.set(rate_val)
+            except Exception:
+                messagebox.showwarning(
+                    "Warning", "Please enter a valid non-negative hourly rate"
+                )
+                return
             self._save_user_settings()
             dialog.destroy()
 
