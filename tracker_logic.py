@@ -7,17 +7,19 @@ import time
 
 class TimeTrackerLogic:
     def __init__(self):
+        # Core state
         self.is_running = False
         self.is_paused = False
         self.start_time = None
         self.elapsed_time = timedelta()
-        self.total_paused_time = timedelta()  # New: to track total time spent paused
-        self.session_start_timestamp = (
-            None  # New: to store the actual start of the session
-        )
+        self.total_paused_time = timedelta()  # Track total time spent paused
+        self.session_start_timestamp = None  # Actual session start timestamp
         self.timer_thread = None
+
+        # Persistence / data
         self.data_file = os.path.join(os.path.expanduser("~"), "time_tracker_data.json")
         self.data = []
+        self.hourly_rate = 0.0  # Used to compute earnings when saving
         self.load_data()
 
         # Callbacks for GUI updates
@@ -171,22 +173,35 @@ class TimeTrackerLogic:
         # Attempt to load any existing data from the new location
         self.load_data()
 
+    def set_hourly_rate(self, rate: float):
+        """Set the hourly rate used when computing earnings on save."""
+        try:
+            r = float(rate)
+            if r < 0:
+                r = 0.0
+            self.hourly_rate = r
+        except Exception:
+            self.hourly_rate = 0.0
+
     def save_time_entry(
         self, task_name, project_name, duration, start_ts, end_ts, break_duration
     ):
         task_name = task_name.strip()
         project_name = project_name.strip()
 
-        work_seconds = int(duration.total_seconds())
+        duration_seconds = int(duration.total_seconds())
         break_seconds = int(break_duration.total_seconds())
+        # Compute earnings (based on working/active time only)
+        earnings = round((duration_seconds / 3600.0) * float(self.hourly_rate), 4)
 
         entry = {
             "task": task_name,
             "project": project_name,
-            "work_seconds": work_seconds,
+            "duration_seconds": duration_seconds,
             "break_seconds": break_seconds,  # New: break time
             "start_time": start_ts.isoformat(),  # New: start timestamp
             "end_time": end_ts.isoformat(),  # New: end timestamp
+            "earnings": earnings,  # New: computed earnings
             "date": datetime.now().strftime("%Y-%m-%d"),
         }
 
