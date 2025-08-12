@@ -139,6 +139,12 @@ class TimeTracker:
         task_name = self.task_name_var.get()
         project_name = self.project_name_var.get()
 
+        # Sync current hourly rate into logic before starting
+        try:
+            self.logic.set_hourly_rate(self.hourly_rate_var.get())
+        except Exception:
+            self.logic.set_hourly_rate(0.0)
+
         self.logic.start_timer(task_name, project_name)
 
         # Update GUI based on logic state
@@ -162,6 +168,13 @@ class TimeTracker:
     def stop_timer_gui(self):
         task_name = self.task_name_var.get()
         project_name = self.project_name_var.get()
+
+        # Ensure latest hourly rate is synced before saving entry
+        try:
+            self.logic.set_hourly_rate(self.hourly_rate_var.get())
+        except Exception:
+            self.logic.set_hourly_rate(0.0)
+
         self.logic.stop_timer(task_name, project_name)
 
         # Update GUI based on logic state
@@ -223,7 +236,9 @@ class TimeTracker:
                 rate = settings.get("hourly_rate")
                 if rate is not None:
                     try:
-                        self.hourly_rate_var.set(float(rate))
+                        rate_f = float(rate)
+                        self.hourly_rate_var.set(rate_f)
+                        self.logic.set_hourly_rate(rate_f)
                     except Exception:
                         pass
         except Exception as e:
@@ -308,6 +323,7 @@ class TimeTracker:
                 if rate_val < 0:
                     raise ValueError
                 self.hourly_rate_var.set(rate_val)
+                self.logic.set_hourly_rate(rate_val)
             except Exception:
                 messagebox.showwarning(
                     "Warning", "Please enter a valid non-negative hourly rate"
