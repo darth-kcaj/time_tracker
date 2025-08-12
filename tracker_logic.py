@@ -63,8 +63,8 @@ class TimeTrackerLogic:
             self.timer_thread.start()
         elif self.is_paused:
             self.is_paused = False
-            # When resuming, subtract the elapsed time from now to get the effective start time for this segment
-            self.start_time = datetime.now() - self.elapsed_time
+            # When resuming, start a new active segment from now; accumulated time stays in self.elapsed_time
+            self.start_time = datetime.now()
             if self.update_status_callback:
                 self.update_status_callback("Resumed tracking")
 
@@ -72,9 +72,8 @@ class TimeTrackerLogic:
         if self.is_running and not self.is_paused:
             self.is_paused = True
             pause_start_time = datetime.now()  # Capture when pause started
-            self.elapsed_time = (
-                pause_start_time - self.start_time
-            )  # Time tracked before pause
+            # Accumulate time tracked in this active segment into total elapsed_time
+            self.elapsed_time += pause_start_time - self.start_time
 
             # Start a new thread to track pause duration
             def track_pause():
@@ -95,10 +94,17 @@ class TimeTrackerLogic:
             if self.is_paused:
                 final_tracked_duration = self.elapsed_time
             else:
-                final_tracked_duration = end_timestamp - self.start_time
+                # Include accumulated elapsed_time plus the current running segment
+                final_tracked_duration = self.elapsed_time + (
+                    end_timestamp - self.start_time
+                )
 
             # Calculate total session duration (including tracked time and paused time)
             total_session_duration = end_timestamp - self.session_start_timestamp
+            # Derive total break duration deterministically
+            computed_break_duration = max(
+                timedelta(), total_session_duration - final_tracked_duration
+            )
 
             self.save_time_entry(
                 task_name,
@@ -106,7 +112,7 @@ class TimeTrackerLogic:
                 final_tracked_duration,
                 self.session_start_timestamp,
                 end_timestamp,
-                self.total_paused_time,
+                computed_break_duration,
             )
 
             self.is_running = False
